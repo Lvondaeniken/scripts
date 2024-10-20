@@ -1,0 +1,14 @@
+#!/usr/bin/bash
+
+
+selected=$(ls ~/dev | fzf)
+echo $selected
+
+tmux has-session -t $selected &> /dev/null
+
+if [ $? != 0 ] 
+ then
+    tmux new-session -s $selected -d
+fi
+
+tmux attach -t $selected
