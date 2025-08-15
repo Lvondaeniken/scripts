@@ -1,0 +1,102 @@
+#!/bin/bash
+
+# Ensure NOTES_DIR is defined
+if [[ -z "$NOTES_DIR" ]]; then
+  echo "error: please define \$NOTES_DIR in your .bashrc"
+  exit 1
+fi
+
+mkdir -p "$NOTES_DIR"
+
+DAILY_DIR="$NOTES_DIR/daily"
+mkdir -p "$DAILY_DIR"
+
+show_help() {
+  cat <<EOF
+Usage: notes [command]
+
+Commands:
+  daily       Create or open today's note in \$NOTES_DIR/daily
+  new         Prompt for a custom note name and create/open it in \$NOTES_DIR
+  show        Fuzzy-find and open a previous note using fzf
+  -h, --help  Show this help message
+
+Environment:
+  NOTES_DIR   Directory where notes are stored (must be set)
+EOF
+}
+
+create_daily_template() {
+  local date_str="$1"
+  cat <<EOF
+# Daily Log – $date_str
+
+## 🔧 Work in Progress
+- Project:
+- Task/Ticket:
+- Goal for today:
+
+## ✅ Completed
+- 
+
+## 🐞 Issues / Blockers
+- 
+
+## 📌 Notes
+- 
+
+## 🔍 Learnings
+- 
+
+EOF
+}
+
+create_named_template() {
+  local note_title="$1"
+  local date_str="$2"
+  cat <<EOF
+# $note_title
+
+Created on $date_str
+
+---
+
+EOF
+}
+
+case "$1" in
+  daily)
+    today=$(date +%F)
+    file="$DAILY_DIR/$today.md"
+    if [[ ! -f "$file" ]]; then
+      create_daily_template "$today" > "$file"
+    fi
+    nvim "$file"
+    ;;
+
+  new)
+    read -rp "Enter note name: " name
+    name=$(echo "$name" | sed 's/[^a-zA-Z0-9._-]/_/g')  # sanitize filename
+    file="$NOTES_DIR/$name.md"
+    if [[ ! -f "$file" ]]; then
+      create_named_template "$name" "$(date +%F)" > "$file"
+    fi
+    nvim "$file"
+    ;;
+
+  show)
+    selected=$(find "$NOTES_DIR" -type f -name "*.md" | sort | fzf --tmux)
+    if [[ -n "$selected" ]]; then
+      nvim "$selected"
+    fi
+    ;;
+
+  -h|--help)
+    show_help
+    ;;
+
+  *)
+    echo "Invalid command. Use 'notes -h' for help."
+    exit 1
+    ;;
+esac

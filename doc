@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+DOC_DIR=~/Documents/thales
+document=$(ls $DOC_DIR | fzf --tmux -m)
+
+if [ ! -z "$document" ]; then
+    zathura $DOC_DIR/$document &
+fi    
